@@ -15,6 +15,8 @@ class CtrlSys{
       for(float sar: dLst){
         System.out.println(sar);
       }
+      System.out.println(pD.path.getLast()[0] + " " + pD.path.getLast()[1] +
+        " " + pD.cLst.get(1)[0] + " " + pD.cLst.get(1)[1]);
       System.out.println("");
 
 

@@ -7,7 +7,7 @@ class CoordTrack implements  Runnable{
   // X Y Z and X Y Z W
   static ArrayList<float[][]> carCrd = new ArrayList<float[][]>();
   static ArrayList<float[]>  globCrd = new ArrayList<float[]>();
-  
+
   volatile boolean threadStarted = false;
   static volatile String s;
   String ss, str = "";
@@ -82,7 +82,7 @@ class CoordTrack implements  Runnable{
     for(float[][] e: locCrd){
       gLoc[0] = gMLoc[0] + (float) ((e[0][0]*Math.cos(gMRot[2]) -
         e[0][1]*Math.sin(gMRot[2]))*Math.cos(gMRot[1]));
-      gLoc[1] = gMLoc[1] + (float) ((e[0][0]*Math.sin(gMRot[2]) -
+      gLoc[1] = gMLoc[1] + (float) ((e[0][0]*Math.sin(gMRot[2]) +
         e[0][1]*Math.cos(gMRot[2]))*Math.cos(gMRot[0]));
       gLoc[2] = gMLoc[2] + (float) (e[0][2]*Math.cos(gMRot[0])*Math.cos(gMRot[1]));
 

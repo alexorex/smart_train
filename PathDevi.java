@@ -10,9 +10,12 @@ class PathDevi implements Runnable{
   float minPtP = (float) 0.05;
   float modelLength = (float) 2.4;
   private ReentrantLock lck = new ReentrantLock();
-    ArrayList<float[]> cLst;
+  volatile ArrayList<float[]> cLst;
+  Plotter pl;
 
   PathDevi(){
+    pl = new Plotter();
+
     cTr = new CoordTrack();
     cLst = cTr.trainPose();
     path.addAll(cLst.subList(1, cLst.size()));
@@ -25,25 +28,51 @@ class PathDevi implements Runnable{
 
   ArrayList<Float> distToPath(){
     ArrayList<Float> distLst = new ArrayList<Float>();
-    LinkedList<float[]> pathSeg;
-    //limit the number of path points to search
+    LinkedList<float[]> pathSeg, cLstSub;
+
+//     try{
+//     while(pl.br.ready()){
+//       pl.br.readLine();
+//     }
+// } catch(IOException ex){}
+
     lck.lock();
-      pathSeg = new LinkedList<float[]>(path.subList( (path.size() > modelLength/minPtP + 1 ?
+      pathSeg = new LinkedList<float[]>(path.subList( (path.size() > modelLength/minPtP ?
         path.size() - (int) (modelLength/minPtP) : 0), path.size()));
     lck.unlock();
-
-    float d = 0;
-    for(float[] c: cLst.subList(1, cLst.size())){
-      d = PtoP(c, pathSeg.getLast());
-      for(float[] p: pathSeg)
-        if(PtoP(c, p) < d)
-          d = PtoP(c, p);
-
-      distLst.add(d);
+    synchronized(this){
+      cLstSub = new LinkedList<float[]>(cLst.subList(1, cLst.size()));
     }
 
-    System.out.println(path.getLast()[0] + " " + path.getLast()[1] + " dst: " +
-      PtoP(cLst.get(1), path.getLast()));
+    // pl.pw.println("plot '-' with lines,'-' with lines");
+    // for(float[] p: pathSeg){
+    //   pl.pw.println(p[0] + " " + p[1]);
+    // }
+    // pl.pw.println("e");
+
+    //limit the number of path points to search
+    int i = 999;
+    float d, par;
+    float[] b = new float[2];
+    for(float[] c: cLstSub){
+      d = Float.MAX_VALUE;
+      // pl.pw.println(c[0] + " " + c[1]);
+      // System.out.println("");
+      for(float[] p: pathSeg){
+        // System.out.print("PSx: "+p[0] + " PSy: "+p[1]+" dst: "+ PtoP(p, c) + " || ");
+        if((par = PtoP(c, p)) < d){
+          d = par;
+          b[0] = p[0]; b[1] = p[1];
+          i = pathSeg.lastIndexOf(p);
+        }
+}
+      distLst.add(d);
+      // System.out.println(" i: "+i);
+// System.out.println(b[0]+" "+b[1]+" dst: "+d+" i: "+i);
+// System.out.println(cLstSub.get(cLstSub.indexOf(c))[0]+" "+cLstSub.get(cLstSub.indexOf(c))[1]);
+    }
+    // pl.pw.println("e");
+    // pl.pw.flush();
 
     return(distLst);
   }
@@ -53,12 +82,29 @@ class PathDevi implements Runnable{
     boolean blockedOnPrevIter = false;
     float[] pathLastPoint;
     LinkedList<float[]> pathTmp = new LinkedList<float[]>();
-    ArrayList<float[]> cLst;
+    // ArrayList<float[]> cLst;
+        pl.pw.println("plot '-' with lines, '-' with lines");
 
     try{
       for(;;){
-        pathLastPoint = path.getLast();
-        cLst = cTr.trainPose();
+        synchronized(this){
+          cLst = cTr.trainPose();
+        //     int t=0;
+        //   for(float[] n: path){
+        //     t++;
+        //     pl.pw.println(n[0] + " " + n[1]);
+        //     if (t>100)
+        //       break;
+        //   }
+        // pl.pw.println("e");
+        //   for(float[] n: cLst)
+        //     pl.pw.println(n[0] + " " + n[1]);
+        }
+
+        // pl.pw.println("e");
+        // pl.pw.flush();
+        // pl.pw.println("replot");
+
         if( PtoP(cLst.get(1), path.getLast()) > minPtP ){
 
             if( lck.tryLock()){
@@ -76,10 +122,9 @@ class PathDevi implements Runnable{
             }
           }
 
-          Thread.sleep(250/(long) CtrlSys.timeMult);
+          Thread.sleep(200/(long) CtrlSys.timeMult);
         }
       }
       catch(InterruptedException ex){}
-
   }
 }
