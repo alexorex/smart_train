@@ -19,6 +19,7 @@ class CoordTrack implements  Runnable{
 
   CoordTrack(){
       (new Thread(this)).start();
+      while(s == null);
       }
 
 
@@ -71,9 +72,16 @@ class CoordTrack implements  Runnable{
     // Y = Y0 + (x*sin(z) + y*cos(z))*cos(x)
     // Z = Z0 + z*cos(y)*cos(x)
     // gMLoc = x, y, z of model train
-    // gMRot = rotations of x, y, z, w
+    // gMRot = rotations of x, y, z, w (QUATERNION)
+
     float[] gLoc = new float[3], gMLoc = (locCrd.get(0)[0]).clone(),
-      gMRot = (locCrd.get(0)[1]).clone();
+      gMRot = new float[4];
+      gMRot[0] = (float)(Math.PI - 2*Math.acos(locCrd.get(0)[1][0]));
+      gMRot[1] = (float)(Math.PI - 2*Math.acos(locCrd.get(0)[1][1]));
+      gMRot[2] =  Math.signum(locCrd.get(0)[1][3])*
+        (float)(Math.PI - 2*Math.acos(locCrd.get(0)[1][2]));
+      gMRot[3] = locCrd.get(0)[1][3];
+
     CoordTrack.globCrd.clear();
     CoordTrack.globCrd.ensureCapacity(locCrd.size());
     CoordTrack.globCrd.add(locCrd.get(0)[0]);
@@ -97,7 +105,6 @@ class CoordTrack implements  Runnable{
   }
 
   synchronized public ArrayList<float[]> trainPose(){
-    while(s == null);
     return toGlobalCrd(parse(CoordTrack.s, cars));
   }
 
@@ -112,5 +119,33 @@ class CoordTrack implements  Runnable{
       }
     }
     catch(IOException ex){}
+  }
+
+  public static void main(String[] args){
+    CoordTrack ct = new CoordTrack();
+
+
+    ArrayList<float[][]> res;
+    ArrayList<float[]> res2;
+    while(true){
+    try{
+      Thread.sleep(500);
+    }
+    catch(InterruptedException ex){}
+
+      // res = ct.parse(CoordTrack.s, ct.cars);
+      // for(float[][] p: res){
+      //   System.out.println(p[0][0] + " " + p[0][1] + " " + p[0][2]);
+      //   System.out.println(p[1][0] + " " + p[1][1] + " " +
+      //     p[1][2] + " " + p[1][3]);
+      // }
+      //   System.out.println("");
+
+      res2 = ct.trainPose();
+      // for(float[] p: res2){
+      //   System.out.println(p[0] + " " + p[1] + " " + p[2]);
+      // }
+      // System.out.println("");
+    }
   }
 }
